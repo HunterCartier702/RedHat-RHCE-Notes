@@ -5,6 +5,8 @@
   - [Introduction](#intro)
   - [Lab Setup](#lab)
   - [Inventory and Ansible.cfg](#files)
+  - [Modules and Collections](#mod)
+  - [Playbooks](#plays)
 
 
 ## <a name="intro"></a>Introduction 
@@ -26,7 +28,7 @@ For the lab I decided to use VirtualBox. I downloaded a rhel-9.6.iso with my Red
 <p align="center"><img alt="snapshots" src="RHCE/4pong.png" height="auto" width="800"></p>
 
 ## <a name="files"></a>Inventory, Ansible.cfg, and Hosts Files
-For this simple network I used a static inventory file in my current project directory. In a minimal form, a static inventory is a list of hostnames to be managed by Ansible.
+For this simple network I used a static inventory file in my current project directory. In a minimal form, a static inventory is a list of hostnames to be managed by Ansible. The inventory tells Ansible which machines to manage (hosts and groups)
 
 ```shell
 $ mkdir rhce && cd rhce
@@ -83,4 +85,79 @@ $ cat /etc/hosts
 192.168.1.20	node2.local node2
 ```
 
+## <a name="mod"></a>Modules and Collections
+Modules are the individual units of work in Ansible — they perform specific tasks on managed hosts, like creating users, copying files, or installing packages. Collections are packages that bundle related Ansible content (modules, plugins, roles, and documentation) together for easier sharing and reuse. 
+
+```shell
+# you can use ansible-doc to get info on a module
+$ ansible-doc user # the module to create users. shows options and examples
+$ ansible-doc -l # print all available modules
+
+# to install extra collections you use ansible-galaxy
+# these collections will give you all you need to run playbooks along with ansible.builtin
+# you will now have access to ansible.posix.firewalld to run playbooks to edit firewall rules
+$ ansible-galaxy collection install community.general
+$ ansible-galaxy collection install ansible.posix
+```
+```shell
+# you can install collections directly from an http link
+$ ansible-galaxy collection install http://example.com/path/to/collection.tar.gz
+
+# you can also install them from a requirements.yml file:
+$ cat requirements.yml
+	collections:
+		- ansible.posix
+		- community.general
+# add: "-src: ansible.posix" to install from a specific src, otherwise not needed
+
+$ ansible-galaxy collection install -r requirements.yml
+```
+
+Then there is ad-hoc commands. Ad-hoc commands are one-line Ansible commands used to perform quick tasks on remote hosts without writing a playbook. They’re great for simple, one-time actions like restarting a service, checking connectivity, or verifying changes.
+
+```shell
+# these commands could have many more options, but the ansible.cfg file takes care of that and shortens the length thankfully
+$ ansible all -m ping # check connectivity
+$ ansible prod -m service -a "name=httpd state=restarted" # restart httpd on the prod group
+$ ansible all -a "crontab -l -u ansible" # check all nodes crontab file for the user ansible
+```
+
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
+
+## <a name="plays"></a>Playbooks
+Playbooks are used to run multiple tasks against managed hosts. In playbooks, one or multiple plays are started, each play runs one or more tasks. These tasks use modules which perform the actual work. Playbooks are written in yaml and have a .yml extension.
+
+
+Here is a playbook configure node2 to mount the rhel iso from /dev/sr0 and setup a local repo. It makes use of the file, mount, and yum_repository modules.
+
+```yaml
+---
+- name: Repo setup
+  hosts: node2
+  tasks:
+    - name: create /repo/ dir
+      file:
+        path: /repo
+        state: directory
+    - name: mount device 
+      mount:
+        path: /repo
+        src: /dev/sr0
+        fstype: iso9660
+        state: mounted
+        opts: defaults
+    - name: configure BaseOS repo
+      yum_repository:
+        name: BaseOS
+        description: BaseOS
+        baseurl: file:///repo/BaseOS
+        enabled: true
+        gpgcheck: false
+    - name: configure AppStream repo
+      yum_repository:
+        name: AppStream
+        description: AppStream
+        baseurl: file:///repo/AppStream
+        enabled: true
+        gpgcheck: false
+```
