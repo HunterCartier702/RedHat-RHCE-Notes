@@ -162,7 +162,7 @@ Here is a playbook to configure node2 to mount the rhel iso from /dev/sr0 and se
         gpgcheck: false
 ```
 
-To run a playbook you use the "ansible-playbook" command
+To run a playbook you use the "ansible-playbook" command. Now any host that this playbook is run against will have a local repo setup automatically assuming you have the rhel iso on /dev/sr0
 
 ```shell
 $ ansible-playbook repo-setup.yml
