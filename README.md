@@ -128,7 +128,7 @@ $ ansible all -a "crontab -l -u ansible" # check all nodes crontab file for the 
 Playbooks are used to run multiple tasks against managed hosts. In playbooks, one or multiple plays are started, each play runs one or more tasks. These tasks use modules which perform the actual work. Playbooks are written in yaml and have a .yml extension.
 
 
-Here is a playbook configure node2 to mount the rhel iso from /dev/sr0 and setup a local repo. It makes use of the file, mount, and yum_repository modules.
+Here is a playbook to configure node2 to mount the rhel iso from /dev/sr0 and setup a local repo. It makes use of the file, mount, and yum_repository modules.
 
 ```yaml
 ---
