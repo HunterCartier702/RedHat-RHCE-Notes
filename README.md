@@ -1,4 +1,4 @@
-# RedHat-RHCE-Notes
+	# RedHat-RHCE-Notes
 
 ## Table of Contents
 
@@ -8,6 +8,8 @@
   - [Modules and Collections](#mod)
   - [Playbooks](#plays)
   - [Variables](#vars)
+  - [Facts](#facts)
+  - [Loops and Conditionals](#loops)
 
 
 ## <a name="intro"></a>Introduction 
@@ -202,7 +204,7 @@ $ vim vars/user_vars
 ```
 
 
-Ansible will check the vars/ directory by default, so if you are using vars from another directory then you would specify it with "vars_viles:" You don't need to specify a vars_files for default directories such as, vars/ host_vars/ and group_vars/
+Ansible will check the vars/ directory by default, so if you are using vars from another directory then you would specify it with "vars_files:" You don't need to specify a vars_files for default directories such as, vars/ host_vars/ and group_vars/
 
 
 ```yaml
@@ -254,3 +256,66 @@ group_names: list of groups the current host is a part of
 
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
 
+## <a name="facts"></a>Facts
+Ansible facts are variables automatically set and discovered on the managed hosts. Facts contain information about hosts that can be used in conditionals such as, IP address, distro, memory, interfaces, devices, and a lot more.
+
+Printing ansible_facts:
+
+```yaml
+---
+- name: show facts
+  hosts: node2
+  tasks:
+    - name: print facts
+      debug:
+        var: ansible_facts
+```
+
+You can also use the setup module as an ad-hoc command and pipe it into less to scroll and search the output easily. The setup module uses and older notation style though
+
+```shell
+$ ansible node2 -m setup | less
+```
+
+You can print specific facts by referring to them specifically like within this playbook:
+
+```yaml
+---
+- name: testing notation
+  hosts: all
+  ignore_errors: true
+  tasks:
+    - debug:
+        msg: "---MODERN NOTATION---"
+      when: ansible_facts['hostname'] == "node1"
+    - debug:
+        var: ansible_facts['hostname']
+    - debug:
+        var: ansible_facts['memtotal_mb']
+    - debug:
+        var: ansible_facts['devices']['sdb']
+      when: ansible_facts['devices']['sdb'] is defined
+    - debug:
+        var: ansible_facts['devices']['sdb']
+      when: ansible_facts['devices']['sdb'] is not defined
+    - debug:
+        var: ansible_facts['devices']['sda']['size'] 
+    - debug:
+        msg: "---OLD SCHOOL NOTATION---"
+      when: ansible_hostname == "node2"
+    - debug:
+        var: ansible_hostname
+    - debug:
+        var: ansible_memtotal_mb
+    - debug:
+        var: ansible_devices.sdb
+      when: ansible_devices.sdb is defined
+    - debug:
+        var: ansible_devices.sdb
+      when: ansible_devices.sdb is not defined
+    - debug:
+        var: ansible_devices.sda.size
+```
+
+## <a name="loops"></a>Loops and Conditionals
+[Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
