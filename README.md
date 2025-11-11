@@ -4,7 +4,7 @@
 
   - [Introduction](#intro)
   - [Lab Setup](#lab)
-  - [Inventory and Ansible.cfg Files]#(files)
+  - [Inventory and Ansible.cfg](#files)
 
 
 ## <a name="intro"></a>Introduction 
@@ -25,19 +25,62 @@ For the lab I decided to use VirtualBox. I downloaded a rhel-9.6.iso with my Red
 ***I now have the lab setup with the user "ansible" on all nodes who has NOPASSWD sudo privs(insecure) but great for RHCE and convenience. I used ssh-keygen then ssh-copy-id for user ansible to copy the key over on both nodes. Everything is now setup and working.***
 <p align="center"><img alt="snapshots" src="RHCE/4pong.png" height="auto" width="800"></p>
 
-## <a name="files"></a>Inventory and Ansible.cfg Files
+## <a name="files"></a>Inventory, Ansible.cfg, and Hosts Files
+For this simple network I used a static inventory file in my current project directory. In a minimal form, a static inventory is a list of hostnames to be managed by Ansible.
 
 ```shell
-dd # delete current line into memory
-yy # copies current line
-p # pastes current line(s)
-Shft + V # visual mode and you can select blocks of text. d to cut y to copy
-Ctrl + v # select characters or group of characters to copy and del with 'd' or 'y'
-u # undo last command
-Ctrl+r # Redo last command. Only once
-?text # search backwards 
-^ # go to first position in current line
-$ # go to end of line
-:%s/old/new/g # replace all occurances of old w/ new. 'gc' to add confirmations
+$ mkdir rhce && cd rhce
+$ cat inventory 
+[dev]
+node1
+
+[prod]
+node2
+
+[servers:children]
+dev
+prod
 ```
+
+The ansible.cfg file defines Ansible’s configuration settings — it controls things like inventory location, privilege escalation, logging, and connection options.
+
+```shell
+$ cat ansible.cfg
+[defaults]
+# (pathlist) Comma separated list of Ansible inventory sources
+inventory = inventory
+
+# (string) Sets the login user for the target machines
+# # When blank it uses the connection plugin's default, normally the user currently executing Ansible.
+remote_user = ansible
+
+# (boolean) This controls whether an Ansible playbook should prompt for a login password.
+# If using SSH keys for authentication, you probably do not need to change this setting.
+ask_pass = false
+
+[privilege_escalation]
+# (boolean) Toggles the use of privilege escalation, allowing you to 'become' another user after login.
+become = true
+
+# (string) Privilege escalation method to use when `become` is enabled.
+become_method = sudo
+
+# (string) The user your login/remote user 'becomes' when using privilege escalation, most systems will use 'root' when no user is specified.
+become_user = root
+
+# (boolean) Toggle to prompt for privilege escalation password.
+become_ask_pass = false
+```
+
+We also need hostname resolution to address managed hosts by name. I will use /etc/hosts for this
+
+```shell
+$ cat /etc/hosts
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+192.168.1.100	control.server control
+192.168.1.10	node1.local node1
+192.168.1.20	node2.local node2
+```
+
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
