@@ -12,10 +12,10 @@ I passed the RHCSA exam 300/300. Now I am taking on the RHCE certification. This
 ## <a name="lab"></a>Lab Setup
 For the lab I decided to use VirtualBox. I downloaded a rhel-9.6.iso with my Red Hat developer account. I setup a control node with a GUI to run ansible and 2 managed nodes with the minimal install (no gui).
 
-***I configured the managed nodes with 2 network interfaces each on their own network for any networking playbooks. I will use the "192" network for the main communication and the "10" network to run the playbooks on***
+***I configured the managed nodes with 2 network interfaces each on their own network for any networking playbooks. I will use the "192" network for the main communication and the "10" network to run any networking playbooks on***
 <p align="center"><img alt="Network" src="RHCE/1networks.png" height="auto" width="800"></p>
 
-***I added an extra hard disk /dev/sdb for partitioning and LVM playbooks. I added the rhel iso to mount it and create a local repository. I also practiced using the control node top mount the rhel iso to host an http repo and connect the nodes to it.***
+***I added an extra hard disk which will be on /dev/sdb for partitioning and LVM playbooks. I added the rhel iso to mount it and create a local repository for each node to install packages from which will be on /dev/sr0. I also practiced with using the control node to mount the rhel iso and to host an HTTP repo and connect the nodes to it.***
 <p align="center"><img alt="storage" src="RHCE/2storage.png" height="auto" width="800"></p>
 
 ***After I had configured everything I made sure to take snapshots, so that I could easily start over with a fresh lab and not have to setup all the minuscule tidbits again. Highly recommend***
