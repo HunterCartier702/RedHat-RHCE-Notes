@@ -7,10 +7,11 @@
   - [Inventory and Ansible.cfg](#files)
   - [Modules and Collections](#mod)
   - [Playbooks](#plays)
+  - [Variables](#vars)
 
 
 ## <a name="intro"></a>Introduction 
-I passed the RHCSA exam 300/300. Now I am taking on the RHCE certification. This is a compilation of my lab setup, notes, and some playbooks. 
+I passed the RHCSA exam 300/300. Now I am taking on the RHCE certification. This is a compilation of my lab setup, some notes, and some playbooks. 
 
 ## <a name="lab"></a>Lab Setup
 For the lab I decided to use VirtualBox. I downloaded a rhel-9.6.iso with my Red Hat developer account. I setup a control node with a GUI to run ansible and 2 managed nodes with the minimal install (no gui).
@@ -108,7 +109,7 @@ $ cat requirements.yml
 	collections:
 		- ansible.posix
 		- community.general
-# add: "-src: ansible.posix" to install from a specific src, otherwise not needed
+# add: "-src: <url>" to install from a specific src, otherwise not needed
 
 $ ansible-galaxy collection install -r requirements.yml
 ```
@@ -125,10 +126,10 @@ $ ansible all -a "crontab -l -u ansible" # check all nodes crontab file for the 
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
 
 ## <a name="plays"></a>Playbooks
-Playbooks are used to run multiple tasks against managed hosts. In playbooks, one or multiple plays are started, each play runs one or more tasks. These tasks use modules which perform the actual work. Playbooks are written in yaml and have a .yml extension.
+Playbooks are used to run multiple tasks against managed hosts. In playbooks, one or multiple plays are started, each play runs one or more tasks. These tasks use modules which perform the actual work. Playbooks are written in yaml and have a .yml extension. 
 
 
-Here is a playbook to configure node2 to mount the rhel iso from /dev/sr0 and setup a local repo. It makes use of the file, mount, and yum_repository modules.
+Here is a playbook to configure node2 to mount the rhel iso from /dev/sr0 and setup a local repo. It makes use of the file, mount, and yum_repository modules. It first creates the directory, mounts the iso to that directory, and then adds the repositories.
 
 ```yaml
 ---
@@ -166,4 +167,90 @@ To run a playbook you use the "ansible-playbook" command. Now any host that this
 
 ```shell
 $ ansible-playbook repo-setup.yml
+$ ansible node2 -a "dnf repolist" # verify repos have been added
 ```
+
+## <a name="vars"></a>Variables
+A variable is a label assigned to a value to make it easy to refer to that value throughout the playbook. 
+
+You can include vars at the top of the play header, but it makes the playbook less portable. This playbook will create the user tux
+
+```yaml
+---
+- name: use variables
+  hosts: all
+  gather_facts: false
+  vars:
+    user: tux # including vars in play header
+  tasks:
+    - name: create user {{ user }}
+      debug:
+        msg: "User variable is -> {{ user }}"
+    - name: user module to create {{ user }}
+      user:
+        name: "{{ user }}"
+        state: absent
+```
+
+You can instead create a directory to host all of you variables called vars/ and include that in the play header instead my referencing the filename vars/user_vars. 
+
+```shell
+$ mkdir vars # default directory ansible will look in for variables
+# if you create another dir then path must be specified in playbook. ex.(dir/user_vars)
+$ vim vars/user_vars
+	user: tux
+```
+
+
+Ansible will check the vars/ directory by default, so if you are using vars from another directory then you would specify it with "vars_viles:" You don't need to specify a vars_files for default directories such as, vars/ host_vars/ and group_vars/
+
+
+```yaml
+---
+- name: use variables
+  hosts: all
+  gather_facts: false
+  vars_files: # Tells Ansible to load variables from one or more files(list)
+    - user_vars # no need to specify full path as ansible will automatically look for vars/ directory 
+  tasks:
+    - name: create user {{ user }}
+      debug:
+        msg: "User variable is -> {{ user }}"
+```
+
+There are also host specific variables for that host only. They are defined in a YAML file that is named after the "inventory_hostname" and are stored in the host_vars/ directory of the current project directory. There are also group specific variables for that group only. They are defined in a YAML file that is named after the "inventory group name" and are stored in the group_vars/ directory of the current project directory.
+
+```shell
+$ mkdir host_vars
+$ mkdir group_vars
+$ cat group_vars/dev # node1 is part of the dev group
+	user: linus # when the playbook is run this user will be created on node1
+$ cat host_vars/node2
+	user: tux # when the playbook runs this user will be created on node2
+
+$ ansible-playbook users.yml # running the playbook below
+```
+
+```yaml
+# no need for vars_files: to be defined. will check host_vars/ group_vars/ and vars/ directories by default
+---
+- name: create a user using a variable
+  hosts: all # running on all hosts (node1 node2)
+  tasks: 
+    - name: create a user {{ user }}
+      user:
+        name: "{{ user }}"
+```
+
+There are also system variables that are built in and cannot be used for anything else
+
+```yaml
+hostvars: a dictionary that contains all variables that apply to a specific host
+inventory_hostname: inventory name of current host
+inventory_hostname_short: short inventory name
+groups: all hosts in inventory and groups these hosts belong to
+group_names: list of groups the current host is a part of
+```
+
+[Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
+
