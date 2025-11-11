@@ -161,3 +161,9 @@ Here is a playbook to configure node2 to mount the rhel iso from /dev/sr0 and se
         enabled: true
         gpgcheck: false
 ```
+
+To run a playbook you use the "ansible-playbook" command
+
+```shell
+$ ansible-playbook repo-setup.yml
+```
