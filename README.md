@@ -21,6 +21,7 @@ For the lab I decided to use VirtualBox. I downloaded a rhel-9.6.iso with my Red
 ***After I had configured everything I made sure to take snapshots, so that I could easily start over with a fresh lab and not have to setup all the minuscule tidbits again. Highly recommend***
 <p align="center"><img alt="snapshots" src="RHCE/3snapshots.png" height="auto" width="800"></p>
 
+[Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md)
 
 ## <a name="basic"></a>Basic Shell Skills
 Vim Basics
