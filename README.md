@@ -1,4 +1,4 @@
-	# RedHat-RHCE-Notes
+# RedHat-RHCE-Notes
 
 ## Table of Contents
 
