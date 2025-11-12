@@ -15,6 +15,7 @@
   - [User and Group Module](#user)
   - [Service Module](#srv)
   - [Managing Storage](#lvm)
+  - [Networking](#net)
 
 
 ## <a name="intro"></a>Introduction 
@@ -641,6 +642,46 @@ $ cat lvm.yml
         fstype: ext4
         opts: defaults
         state: mounted # states to add to fstab and mount now
+```
+
+## <a name="net"></a>Networking
+The rhel-system-roles.network system role allows for configuration of network related setting and makes it very easy. First you must install and then read the README.md file to understand the variables you need to declare.
+
+```shell
+$ sudo dnf install -y rhel-system-roles
+$ cp /usr/share/doc/rhel-system-roles/network/example-eth_simple_auto-playbook.yml .
+# now I will edit the file
+```
+Now I will run this playbook to make changes to the second network card I added to node1 which is enp0s8
+
+```yaml
+---
+- name: Manage autoconnect
+  hosts: node1
+  vars:
+    network_provider: nm
+    network_connections:
+      - name: enp0s8
+        type: ethernet
+        state: up # reloads the config
+        ip:
+          address:
+            - 10.0.2.30/24
+            - fc00::202/64
+
+  roles:
+    - rhel-system-roles.network
+```
+
+Verifying Changes:
+
+```shell
+$ ansible node1 -a "ip a"
+node1 | CHANGED | rc=0 >>
+3: enp0s8: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel state UP group default qlen 1000
+    inet 10.0.2.30/24 brd 10.0.2.255 scope global noprefixroute enp0s8
+
+    inet6 fc00::202/64 scope global noprefixroute 
 ```
 
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
