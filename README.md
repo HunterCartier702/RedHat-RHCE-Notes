@@ -10,7 +10,7 @@
   - [Variables](#vars)
   - [Facts](#facts)
   - [Loops and Conditionals](#loops)
-  - [File Management Modules](#files)
+  - [File Management Modules](#file)
 
 
 ## <a name="intro"></a>Introduction 
@@ -383,7 +383,7 @@ The "register" keyword is used to store results of a command or task. "When" can
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
 
 
-## <a name="files"></a>File Management Modules
+## <a name="file"></a>File Management Modules
 ansible.builtin.file module sets attributes to files, and can also create and remove files, sym-links and more.
 
 ```yaml
