@@ -10,6 +10,7 @@
   - [Variables](#vars)
   - [Facts](#facts)
   - [Loops and Conditionals](#loops)
+  - [File Management Modules](#files)
 
 
 ## <a name="intro"></a>Introduction 
@@ -318,4 +319,148 @@ You can print specific facts by referring to them specifically like within this 
 ```
 
 ## <a name="loops"></a>Loops and Conditionals
+
+```yaml
+loop: allows you to loop over a "list" of items instead of calling the same task repeatedly
+when: performs a conditional task execution based on the value of certain variables
+handlers: used to perform a task only if triggered by another task that has changed something
+
+---
+- name: start some services using a loop
+  hosts: node2
+  vars:
+    my_services:
+      - httpd
+      - sshd
+  tasks:
+    - name: start services
+      service:
+        name: "{{ item }}"
+        state: started
+      loop: "{{ my_services }}"
+```
+
+Using the conditional "when" parameter to execute a task only when a condition has been met
+
+```yaml
+---
+- name: when conditional
+  hosts: all
+  vars:
+    my_distros:
+      - Debian
+      - NixOS
+      - RedHat
+    pkg: tmux
+  tasks:
+    - name: install pkg only when the condition is met
+      yum:
+        name: "{{ pkg }}"
+        state: present
+      when: ansible_distribution in my_distros # this task will trigger both nodes as they are RedHat distros
+# can also use 'or' and 'and' conditions
+# when: ansible_distribution == "RedHat" and ansible_machine == "x86_64"
+```
+
+The "register" keyword is used to store results of a command or task. "When" can be used to run a task only if a specific result was found.
+
+```yaml
+---
+- name: view register output
+  hosts: node1
+  vars:
+    username: clyde
+  tasks:
+  - name: show register on user module
+    user:
+      name: "{{ username }}"
+    register: user # setting the output of the user module into the "user" variable 
+  - name: print register results
+    debug:
+      var: user
+```
+
+[Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
+
+
+## <a name="files"></a>File Management Modules
+ansible.builtin.file module sets attributes to files, and can also create and remove files, sym-links and more.
+
+```yaml
+---
+- name: create a file
+  hosts: all
+  tasks:
+    - name: create a file
+      ansible.builtin.file: 
+        path: /tmp/test_file
+        owner: ansible
+        mode: 0640
+        state: touch # "state: directory" would create a directory
+        setype: public_content_rw_t
+```
+
+There is also the ansible.builtin.copy module that copies a file from a local machine to a directory on a managed host
+
+```yaml
+---
+- name: copy module
+  hosts: all
+  tasks:
+  - name: copy file 
+    copy:
+      src: /etc/hosts # local file
+      dest: /tmp/ # remote directory
+```
+
+For simple modifications to files you can use the lineinfile and blockinfile modules, but for more complicated modifications Jinja2 and the template module come in handy.
+
+```shell
+# create a templates/ directory to put your jinja2 files in
+$ mkdir templates/
+$ cat templates/test.j2
+# this would generate a simple /etc/hosts file for all nodes in the inventory file. it makes use of ansible facts variables from the managed nodes
+127.0.0.1 localhost
+{% for host in groups['all'] %} 
+{{ hostvars[host]['ansible_facts']['default_ipv4']['address'] }} {{ hostvars[host]['ansible_facts']['fqdn'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+{% endfor %}
+
+# result after running playbook:
+$ ansible node1 -a "cat /tmp/test_hosts"
+node1 | CHANGED | rc=0 >>
+127.0.0.1 localhost
+192.168.1.10 node1.local node1
+192.168.1.20 node2.local node2
+```
+
+```yaml
+---
+- name: use the template module
+  hosts: all
+  tasks:
+    - name: create a /etc/hosts test file
+      template:
+        src: hosts.j2 # ansible pulls from the templates/ directory by default so no need to specify full path
+        dest: /tmp/test_hosts
+```
+
+One last important module is the community.general.sefcontext module to manage SELinux file context in the SELinux Policy
+
+```yaml
+---
+- name: use sefcontext module
+  hosts: all
+  tasks:
+    - name: change context type
+      community.general.sefcontext:
+        target: /tmp/test_hosts
+        setype: net_conf_t
+        state: present
+      notify:
+        - restore
+  handlers:
+    - name: restore
+      command: restorecon -v /tmp/test_hosts
+```
+
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
