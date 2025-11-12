@@ -11,6 +11,8 @@
   - [Facts](#facts)
   - [Loops and Conditionals](#loops)
   - [File Management Modules](#file)
+  - [Installing Packages](#pkg)
+  - [User and Group Module](#user)
 
 
 ## <a name="intro"></a>Introduction 
@@ -462,5 +464,86 @@ One last important module is the community.general.sefcontext module to manage S
     - name: restore
       command: restorecon -v /tmp/test_hosts
 ```
+
+## <a name="pkg"></a>Installing Packages
+You use the ansible.builtin.dnf module to install packages. To install package groups you prepend an '@' symbol in front of the group name. name: '@Virtualization Host'
+
+```yaml
+---
+- name: install packages
+  hosts: node1
+  tasks:
+    - name: dnf module
+      ansible.builtin.dnf:
+        name:
+          - httpd
+          - "@Headless Management"
+        state: present
+```
+
+You can use the yum_repository to add repos to the system if you don't have the one you need available
+
+```yaml
+---
+- name: Repo setup
+  hosts: node1
+  tasks:
+    - name: configure BaseOS repo
+      yum_repository:
+        name: BaseOS
+        description: BaseOS
+        baseurl: file:///repo/BaseOS
+        enabled: true
+        gpgcheck: false
+    - name: configure AppStream repo
+      yum_repository:
+        name: AppStream
+        description: AppStream
+        baseurl: file:///repo/AppStream
+        enabled: true
+        gpgcheck: false
+```
+
+[Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
+
+
+## <a name="user"></a>User and Group Module
+The ansible.builtin.user module contains all you need to manage basic user properties. The ansible.builtin.group module creates and manages groups. It is a very simple module.
+
+This playbook will create some groups, the user, add that user to the groups, set their password, and add them to the sudoers file
+
+```yaml
+---
+- name: create a user and groups
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Create groups
+      group:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - test1
+        - test2 
+        - test3
+
+    - name: create user
+      user:
+        name: goku
+        shell: /bin/bash
+        groups: test1,test2,test3
+        append: yes
+
+    - name: add password
+      shell: "echo toor | passwd --stdin goku" # insecure password...
+
+    - name: give sudo access
+      lineinfile:
+        path: /etc/sudoers
+        line: "goku ALL=(ALL) ALL"
+        validate: "visudo -cf %s"
+        insertafter: EOF
+```
+
 
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
