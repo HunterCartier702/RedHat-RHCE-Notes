@@ -13,6 +13,8 @@
   - [File Management Modules](#file)
   - [Installing Packages](#pkg)
   - [User and Group Module](#user)
+  - [Service Module](#srv)
+  - [Managing Storage](#lvm)
 
 
 ## <a name="intro"></a>Introduction 
@@ -545,5 +547,100 @@ This playbook will create some groups, the user, add that user to the groups, se
         insertafter: EOF
 ```
 
+## <a name="srv"></a>Service Module
+The ansible.builtin.service module allows you to manage the state of services.
+
+The module is pretty simple itself. You can make it more complex by adding it under handlers after making changes to a config file to restart the service.
+```yaml
+$ cat service.yml 
+---
+- name: service module
+  hosts: all
+  tasks:
+    - name: Start service httpd, if not started and enable for reboots
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+```
+
+There is also the ansible.builtin.cron module to schedule cron tasks.
+
+```yaml
+---
+- name: sched cron job
+  hosts: node2
+  gather_facts: false
+  tasks:
+    - name: run a cron job
+      cron:
+        name: write msg to a file
+        minute: "*/2"
+        hour: 7-12
+        user: ansible # if user isn't specified it will create the job as root user because of the "become" parameter in ansible.cfg
+        job: echo "$(date)" >> /tmp/date.txt
+```
+
+## <a name="lvm"></a>Managing Storage
+There are a few different modules to help manage devices on a system.
+
+```yaml
+ansible.builtin.mount: used to mount existing filesystem
+community.general.parted: used to manage partitions
+community.general.lvg: manages logical volumes
+community.general.lvol: manage logical volumes
+community.general.filesystem: used to create filesystems
+```
+
+Here is a single playbook that runs all of these tasks. This playbook assumes there is a device /dev/sdb. To make more portable you could add conditionals with ansible_facts['devices'] variables and such other ways.
+
+```yaml
+$ cat lvm.yml 
+---
+- name: manage storage
+  hosts: node1
+  gather_facts: false
+  tasks:
+    - name: add partition 1
+      parted:
+        device: /dev/sdb 
+        number: 1
+        state: present
+        part_end: 5GiB
+    - name: add partition 2
+      parted:
+        device: /dev/sdb
+        number: 2
+        state: present
+        part_start: 5GiB
+        part_end: 10GiB
+    - name: create vg
+      lvg:
+        state: present
+        vg: vgtest
+        pvs:
+          - /dev/sdb1
+          - /dev/sdb2
+    - name: create lv
+      lvol:
+        vg: vgtest
+        lv: lvtest
+        size: 60%VG # or 60%FREE
+    - name: add filesystem
+      filesystem:
+        fstype: ext4
+        dev: /dev/vgtest/lvtest
+    - name: create mount point
+      file:
+        path: /test
+        state: directory
+    - name: mount /dev/sdb1
+      mount:
+        src: /dev/vgtest/lvtest # device 
+        path: /test # mount point
+        fstype: ext4
+        opts: defaults
+        state: mounted # states to add to fstab and mount now
+```
 
 [Back to Top](https://github.com/HunterCartier702/RedHat-RHCE-Notes/blob/main/README.md#intro)
